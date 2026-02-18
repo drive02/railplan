@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  railplan:
+    build: .
+    container_name: railplan-app
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      # Persistance de la base de données SQLite
+      - railplan-data:/app/data
+    environment:
+      # ──────────────────────────────────────────
+      # Base de données (SQLite par défaut)
+      # Pour PostgreSQL : postgresql://user:pass@host/db
+      - DATABASE_URL=sqlite:////app/data/railplan.db
+
+      # ──────────────────────────────────────────
+      # Configuration email (SMTP)
+      # Décommentez et remplissez pour activer les alertes
+      # - MAIL_SERVER=smtp.gmail.com
+      # - MAIL_PORT=587
+      # - MAIL_USERNAME=votre@email.com
+      # - MAIL_PASSWORD=votre_mot_de_passe_app
+
+      # ──────────────────────────────────────────
+      # Mode debug (false en production)
+      - DEBUG=false
+
+volumes:
+  railplan-data:
+    driver: local
