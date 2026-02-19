@@ -139,6 +139,7 @@
   .status-arrive{background:#6a8a9a}
   .status-alerte{background:#e05a1e;animation:pulse 1s infinite;box-shadow:0 0 6px rgba(224,90,30,0.5)}
   .status-quai{background:#f0b030;box-shadow:0 0 6px rgba(240,176,48,0.6);animation:pulse 1.5s infinite}
+  .status-dechargement{background:#00d4aa;box-shadow:0 0 6px rgba(0,212,170,0.6);animation:pulse 1.2s infinite}
   .alert-item.acked{opacity:.7}
   .alert-item.acked .alert-icon{filter:grayscale(.5)}
   .trains-table tr[onclick]{transition:background .15s}
@@ -444,6 +445,7 @@
           <option value="En route">En route</option>
           <option value="Planifié">Planifié</option>
           <option value="Mise à quai">Mise à quai</option>
+          <option value="En déchargement">En déchargement</option>
           <option value="Arrivé">Arrivé</option>
           <option value="Alerte">Alerte</option>
         </select>
@@ -633,7 +635,7 @@ function toast(msg,type='success'){
 function fmtDate(s){if(!s)return'—';const d=new Date(s);return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}
 function getProgress(t){const n=new Date(),dep=new Date(t.depart),arr=new Date(t.arrivee);if(n<dep)return 0;if(n>arr)return 100;return Math.round((n-dep)/(arr-dep)*100)}
 function cargoClass(c){return'badge badge-'+({Orge:'orge',Blé:'ble',Maïs:'mais',Colza:'colza',Tournesol:'tournesol'}[c]||'orge')}
-function statusHTML(s){return`<span class="status-dot status-${({'En route':'en-route',Planifié:'planifie',Arrivé:'arrive',Alerte:'alerte','Mise à quai':'quai'}[s]||'planifie')}"></span>${s}`}
+function statusHTML(s){return`<span class="status-dot status-${({'En route':'en-route',Planifié:'planifie',Arrivé:'arrive',Alerte:'alerte','Mise à quai':'quai','En déchargement':'dechargement'}[s]||'planifie')}"></span>${s}`}
 function getFilters(){return{rail:document.getElementById('filterRail').value,cargo:document.getElementById('filterCargo').value,status:document.getElementById('filterStatus').value}}
 
 // API
@@ -687,7 +689,13 @@ function renderRailTimeline(){
       const dep=new Date(t.depart),arr=new Date(t.arrivee);
       const left=Math.max(0,(dep-dayStart)/span*100);
       const width=Math.max(1,(arr-dep)/span*100);
-      return`<div class="train-block" style="left:${left}%;width:${Math.min(width,100-left)}%;background:${rail.color};opacity:${t.status==='Arrivé'?.4:1};color:#000;cursor:pointer" title="Cliquer pour voir le détail" onclick="openDetail(${t.id})">${t.train_id}</div>`;
+      const prog_=getProgress(t);
+      const blockLabel = prog_>0&&prog_<100 ? `${t.train_id} · ${prog_}%` : t.train_id;
+      const blockW = Math.min(width,100-left);
+      return`<div class="train-block" style="left:${left}%;width:${blockW}%;background:${rail.color};opacity:${t.status==='Arrivé'?.4:1};color:#000;cursor:pointer;justify-content:space-between;padding:0 6px" title="Cliquer pour voir le détail" onclick="openDetail(${t.id})">
+        <span style="font-weight:700;font-size:.62rem">${t.train_id}</span>
+        ${blockW>8?`<span style="font-size:.6rem;opacity:.85">${prog_>0?prog_+'%':t.cargo}</span>`:''}
+      </div>`;
     }).join('');
     const nowPct=Math.max(0,Math.min(100,(now-dayStart)/span*100));
     html+=`<div class="rail-track"><div class="rail-name" style="color:${rail.color}"><span class="rail-indicator" style="background:${rail.color}"></span>${rail.name.split('—')[0]}</div><div class="track-bar">${blocks}<div style="position:absolute;left:${nowPct}%;top:0;bottom:0;width:2px;background:rgba(255,255,255,.3);z-index:10"></div></div></div>`;
@@ -1056,17 +1064,32 @@ function openDetail(trainId){
   document.getElementById('detailId').textContent = t.train_id;
   document.getElementById('detailSubtitle').textContent = rail.name+' — '+t.client;
 
-  const statusColors = {'En route':'rgba(0,153,204,.2)','Planifié':'rgba(212,168,67,.2)','Arrivé':'rgba(106,138,154,.2)','Alerte':'rgba(224,90,30,.2)'};
-  const statusText = {'En route':'#0099cc','Planifié':'#d4a843','Arrivé':'#6a8a9a','Alerte':'#e05a1e'};
+  // Calcul du statut OPÉRATIONNEL réel basé sur progression + déchargement
+  function getOperationalStatus(train, unloadPct, prog){
+    if(train.status==='Alerte') return {label:'ALERTE', color:'#e05a1e', bg:'rgba(224,90,30,.2)'};
+    if(unloadPct>=100)           return {label:'DÉCHARGÉ', color:'#4ade80', bg:'rgba(74,222,128,.15)'};
+    if(unloadPct>0)              return {label:'EN DÉCHARGEMENT', color:'#00d4aa', bg:'rgba(0,212,170,.15)'};
+    if(train.status==='Mise à quai') return {label:'MISE À QUAI', color:'#f0b030', bg:'rgba(240,176,48,.2)'};
+    if(prog>=100)                return {label:'ARRIVÉ', color:'#6a8a9a', bg:'rgba(106,138,154,.2)'};
+    if(prog>0)                   return {label:'EN ROUTE '+prog+'%', color:'#0099cc', bg:'rgba(0,153,204,.2)'};
+    return {label:'PLANIFIÉ', color:'#d4a843', bg:'rgba(212,168,67,.2)'};
+  }
+  const opStatus = getOperationalStatus(t, unloadPct, prog);
   const badge = document.getElementById('detailStatusBadge');
-  badge.textContent = t.status.toUpperCase();
-  badge.style.cssText = `background:${statusColors[t.status]||'rgba(255,255,255,.1)'};color:${statusText[t.status]||'white'};border:1px solid ${statusText[t.status]||'white'}`;
+  badge.textContent = opStatus.label;
+  badge.style.cssText = `background:${opStatus.bg};color:${opStatus.color};border:1px solid ${opStatus.color}`;
+
+  // Sync statut BDD si déchargement a commencé et statut pas à jour
+  if(unloadPct>0 && unloadPct<100 && t.status!=='En déchargement'){
+    api('/api/trains/'+t.id,{method:'PUT',body:JSON.stringify({status:'En déchargement'})}).then(()=>loadTrains());
+  } else if(unloadPct>=100 && t.status!=='Arrivé'){
+    api('/api/trains/'+t.id,{method:'PUT',body:JSON.stringify({status:'Arrivé'})}).then(()=>loadTrains());
+  }
+
   // Afficher/masquer bouton quai
   setTimeout(()=>{
     const btnQ = document.getElementById('btnQuaiDetail');
-    if(btnQ) btnQ.style.display = (t.status==='Arrivé'||t.status==='Mise à quai'||t.status==='En route'&&false) ? 'none' : '';
-    // Libellé dynamique selon contexte
-    if(btnQ && t.status==='Mise à quai') btnQ.style.display='none';
+    if(btnQ) btnQ.style.display = (t.status==='Arrivé'||t.status==='Mise à quai'||t.status==='En déchargement') ? 'none' : '';
   },50);
 
   // Info cards
