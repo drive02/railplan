@@ -701,7 +701,7 @@ function renderRailTimeline(){
       const dep=new Date(t.depart),arr=new Date(t.arrivee);
       const left=Math.max(0,(dep-dayStart)/span*100);
       const width=Math.max(1,(arr-dep)/span*100);
-      const unloadPct_ = Math.min(100, Math.round(getUnloaded(t.id)/t.tonnage*100));
+      const unloadPct_ = Math.min(100, Math.round(getUnloaded(t.train_id)/t.tonnage*100));
       const blockW = Math.min(width,100-left);
       return`<div class="train-block" style="left:${left}%;width:${blockW}%;background:${rail.color};opacity:${t.status==='Arrivé'?.4:1};color:#000;cursor:pointer;justify-content:space-between;padding:0 6px" title="Cliquer pour voir le détail" onclick="openDetail(${t.id})">
         <span style="font-weight:700;font-size:.62rem">${t.train_id}</span>
@@ -781,17 +781,17 @@ function renderFullTimeline(){
 }
 
 // Alerts — avec acquittement
-function getAckKey(id){ return 'railplan-ack-'+id; }
-function getAck(id){ try{return JSON.parse(localStorage.getItem(getAckKey(id)))||null;}catch{return null;} }
-function setAck(id,comment){ localStorage.setItem(getAckKey(id), JSON.stringify({comment, time:new Date().toLocaleString('fr-FR'), by:'Opérateur'})); }
+function getAckKey(trainId){ return 'railplan-ack-v2-'+trainId; }
+function getAck(trainId){ try{return JSON.parse(localStorage.getItem(getAckKey(trainId)))||null;}catch{return null;} }
+function setAck(trainId,comment){ localStorage.setItem(getAckKey(trainId), JSON.stringify({comment, time:new Date().toLocaleString('fr-FR'), by:'Opérateur'})); }
 
 function renderAlerts(){
   const now=new Date();
 
   // Trains mis à quai (en attente de déchargement)
   const quaiAlerts = trainsData.filter(t=>t.status==='Mise à quai').map(t=>{
-    const ack=getAck('quai-'+t.id);
-    return{type:'warning',icon:'🛤️',trainId:'quai-'+t.id,
+    const ack=getAck('quai-'+t.train_id);
+    return{type:'warning',icon:'🛤️',trainId:'quai-'+t.train_id,
       title:`En attente de déchargement — ${t.train_id}`,
       desc:`${t.cargo} (${t.tonnage}t) | ${t.client} | Mise à quai confirmée`,
       time:'À quai', ack};
@@ -799,8 +799,8 @@ function renderAlerts(){
 
   // Alertes critiques (statut Alerte)
   const criticals = trainsData.filter(t=>t.status==='Alerte').map(t=>{
-    const ack = getAck(t.id);
-    return {type:'critical', icon:'🚨', trainId:t.id,
+    const ack = getAck(t.train_id);
+    return {type:'critical', icon:'🚨', trainId:t.train_id,
       title:`Retard signalé — ${t.train_id}`,
       desc:`${t.cargo} (${t.tonnage}t) | ${t.client} | ${t.notes||'Cause inconnue'}`,
       time:'Maintenant', ack};
@@ -812,8 +812,8 @@ function renderAlerts(){
     return diff>0&&diff<90&&t.status!=='Arrivé';
   }).map(t=>{
     const diff=Math.round((new Date(t.arrivee)-now)/60000);
-    const ack=getAck('warn-'+t.id);
-    return{type:'warning',icon:'⏰',trainId:'warn-'+t.id,
+    const ack=getAck('warn-'+t.train_id);
+    return{type:'warning',icon:'⏰',trainId:'warn-'+t.train_id,
       title:`Arrivée imminente — ${t.train_id}`,
       desc:`${t.cargo} (${t.tonnage}t) pour ${t.client} dans ${diff} min`,
       time:fmtDate(t.arrivee), ack};
@@ -974,9 +974,11 @@ function toggleTV(){
 // ── Détail Convoi ────────────────────────────────────────
 let currentDetailTrain = null;
 // Stockage local des tonnages déchargés
-function getUnloadedKey(id){ return 'railplan-unload-'+id; }
-function getUnloaded(id){ return parseFloat(localStorage.getItem(getUnloadedKey(id))||'0'); }
-function setUnloaded(id,val){ localStorage.setItem(getUnloadedKey(id), val); }
+// Clés basées sur train_id (TRN-XXX) et NON sur l'id numérique
+// Évite la réutilisation de données après suppression/recréation
+function getUnloadedKey(trainId){ return 'railplan-unload-v2-'+trainId; }
+function getUnloaded(trainId){ return parseFloat(localStorage.getItem(getUnloadedKey(trainId))||'0'); }
+function setUnloaded(trainId,val){ localStorage.setItem(getUnloadedKey(trainId), val); }
 
 // SVG Locomotive
 function svgLoco(color){
@@ -1068,7 +1070,7 @@ function openDetail(trainId){
   const dep = new Date(t.depart);
   const arr = new Date(t.arrivee);
   const prog = getProgress(t);
-  const unloaded = getUnloaded(t.id);
+  const unloaded = getUnloaded(t.train_id);
   const unloadPct = Math.min(100, Math.round(unloaded/t.tonnage*100));
 
   // Header
@@ -1190,7 +1192,7 @@ function wagonsCount(tonnage){
 function saveUnload(){
   if(!currentDetailTrain) return;
   const val = Math.min(currentDetailTrain.tonnage, Math.max(0, parseFloat(document.getElementById('unloadInput').value)||0));
-  setUnloaded(currentDetailTrain.id, val);
+  setUnloaded(currentDetailTrain.train_id, val);
   openDetail(currentDetailTrain.id);
   toast('✅ Déchargement mis à jour');
 }
@@ -1206,7 +1208,7 @@ async function setQuai(trainId){
 
 function resetUnload(){
   if(!currentDetailTrain) return;
-  setUnloaded(currentDetailTrain.id, 0);
+  setUnloaded(currentDetailTrain.train_id, 0);
   openDetail(currentDetailTrain.id);
   toast('↺ Déchargement réinitialisé');
 }
@@ -1239,6 +1241,14 @@ function toggleDark(){
     const lbl = document.getElementById('themeLabel');
     if(lbl) lbl.textContent = 'JOUR';
   }
+})();
+
+// Nettoyage des anciennes clés localStorage v1 (migration)
+(function cleanOldKeys(){
+  Object.keys(localStorage).forEach(k=>{
+    if(k.startsWith('railplan-unload-') && !k.startsWith('railplan-unload-v2-')) localStorage.removeItem(k);
+    if(k.startsWith('railplan-ack-')    && !k.startsWith('railplan-ack-v2-'))    localStorage.removeItem(k);
+  });
 })();
 
 // Init
