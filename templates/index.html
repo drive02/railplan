@@ -177,6 +177,112 @@
   .ticker-inner{display:inline-block;animation:scroll 40s linear infinite}
   @keyframes scroll{from{transform:translateX(100vw)}to{transform:translateX(-100%)}}
 
+  /* ── Page Détail Convoi ─────────────────────── */
+  .detail-overlay{
+    display:none;position:fixed;inset:0;z-index:150;
+    background:var(--bg);overflow-y:auto;padding-bottom:40px;
+  }
+  .detail-overlay.open{display:block;animation:fadeIn .25s ease}
+  .detail-header{
+    background:linear-gradient(135deg,var(--ocean-deep) 0%,var(--ocean-mid) 100%);
+    padding:16px 32px;display:flex;align-items:center;justify-content:space-between;
+    border-bottom:3px solid var(--wheat);position:sticky;top:0;z-index:10;
+  }
+  .detail-header-left{display:flex;align-items:center;gap:16px}
+  .detail-back{
+    background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);
+    color:white;padding:8px 16px;border-radius:3px;cursor:pointer;
+    font-family:var(--font-mono);font-size:.8rem;letter-spacing:1px;transition:all .2s;
+  }
+  .detail-back:hover{background:rgba(255,255,255,.3)}
+  .detail-train-id{font-family:var(--font-display);font-size:2rem;letter-spacing:4px;color:white}
+  .detail-subtitle{font-family:var(--font-mono);font-size:.8rem;color:rgba(255,255,255,.6);margin-top:2px}
+  .detail-status-badge{
+    font-family:var(--font-mono);font-size:.8rem;letter-spacing:2px;
+    padding:6px 16px;border-radius:20px;font-weight:600;
+  }
+  .detail-body{padding:32px;max-width:1200px;margin:0 auto}
+
+  /* Info cards */
+  .detail-info-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-bottom:32px}
+  .detail-info-card{
+    background:var(--panel);border:1px solid var(--border);border-radius:8px;
+    padding:18px 20px;box-shadow:0 2px 10px rgba(0,95,142,.07);
+  }
+  .detail-info-label{font-family:var(--font-mono);font-size:.62rem;letter-spacing:2px;color:var(--text-dim);margin-bottom:6px;text-transform:uppercase}
+  .detail-info-value{font-size:1.1rem;font-weight:600;color:var(--text)}
+  .detail-info-sub{font-size:.75rem;color:var(--text-dim);margin-top:3px}
+
+  /* Train visuel */
+  .train-visual-section{
+    background:var(--panel);border:1px solid var(--border);border-radius:8px;
+    padding:28px;margin-bottom:24px;box-shadow:0 2px 10px rgba(0,95,142,.07);
+    overflow:hidden;
+  }
+  .train-visual-title{font-family:var(--font-mono);font-size:.7rem;letter-spacing:3px;color:var(--text-dim);text-transform:uppercase;margin-bottom:20px;padding-bottom:8px;border-bottom:2px solid var(--accent2)}
+  .train-scene{
+    background:linear-gradient(180deg, transparent 60%, rgba(0,95,142,.06) 100%);
+    border-radius:6px;padding:20px 16px 8px;position:relative;overflow-x:auto;
+  }
+  .train-svg-container{display:flex;align-items:flex-end;gap:3px;min-width:max-content;padding-bottom:12px}
+
+  /* Wagons SVG inline */
+  .wagon-loco svg, .wagon-car svg{display:block}
+  .wagon-loco{filter:drop-shadow(0 4px 8px rgba(0,0,0,.3))}
+  .wagon-car{filter:drop-shadow(0 3px 6px rgba(0,0,0,.2));transition:transform .2s}
+  .wagon-car:hover{transform:translateY(-4px)}
+  .wagon-car.unloaded{opacity:.35;filter:grayscale(.8)}
+
+  /* Rails */
+  .train-rails{height:8px;background:repeating-linear-gradient(90deg,var(--border) 0,var(--border) 20px,transparent 20px,transparent 30px);border-radius:2px;margin:0 16px;position:relative}
+  .train-rails::before,.train-rails::after{content:'';position:absolute;top:2px;left:0;right:0;height:2px;background:var(--border);border-radius:1px}
+  .train-rails::after{top:4px}
+
+  /* Progress déchargement */
+  .unload-section{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:24px;margin-bottom:24px;box-shadow:0 2px 10px rgba(0,95,142,.07)}
+  .unload-title{font-family:var(--font-mono);font-size:.7rem;letter-spacing:3px;color:var(--text-dim);text-transform:uppercase;margin-bottom:20px;padding-bottom:8px;border-bottom:2px solid var(--accent2)}
+  .unload-progress-wrap{margin-bottom:20px}
+  .unload-labels{display:flex;justify-content:space-between;margin-bottom:8px}
+  .unload-pct{font-family:var(--font-display);font-size:3rem;line-height:1;color:var(--ocean-deep)}
+  body.dark .unload-pct{color:#7dd3f0}
+  .unload-tons{font-family:var(--font-mono);font-size:.85rem;color:var(--text-dim);text-align:right;padding-top:8px}
+  .unload-bar-track{height:24px;background:var(--border);border-radius:12px;overflow:hidden;position:relative}
+  .unload-bar-fill{
+    height:100%;border-radius:12px;
+    background:linear-gradient(90deg,var(--accent2),var(--ocean-mid));
+    transition:width 1.5s cubic-bezier(.4,0,.2,1);
+    position:relative;overflow:hidden;
+  }
+  .unload-bar-fill::after{
+    content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);
+    animation:shimmer 2s infinite;
+  }
+  @keyframes shimmer{to{left:200%}}
+  .unload-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:20px}
+  .unload-step{
+    background:var(--bg);border:1px solid var(--border);border-radius:6px;
+    padding:12px;text-align:center;transition:all .3s;
+  }
+  .unload-step.done{background:rgba(0,153,204,.1);border-color:var(--accent2)}
+  .unload-step.active{background:rgba(0,153,204,.15);border-color:var(--accent2);box-shadow:0 0 12px rgba(0,153,204,.2)}
+  .unload-step-icon{font-size:1.4rem;margin-bottom:4px}
+  .unload-step-label{font-family:var(--font-mono);font-size:.6rem;letter-spacing:1px;color:var(--text-dim);text-transform:uppercase}
+  .unload-step.done .unload-step-label,.unload-step.active .unload-step-label{color:var(--accent2)}
+
+  /* Controls déchargement */
+  .unload-controls{display:flex;align-items:center;gap:12px;margin-top:16px;flex-wrap:wrap}
+  .unload-input-group{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:.8rem;color:var(--text-dim)}
+  .unload-input{width:80px;text-align:center;font-family:var(--font-mono);padding:6px 8px;border:1px solid var(--border);border-radius:3px;background:var(--bg);color:var(--text)}
+
+  /* Timeline détail */
+  .detail-timeline{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:24px;box-shadow:0 2px 10px rgba(0,95,142,.07)}
+  .journey-bar{position:relative;height:40px;background:var(--bg);border-radius:6px;overflow:hidden;margin:16px 0}
+  .journey-fill{height:100%;border-radius:6px;display:flex;align-items:center;padding-left:12px;font-family:var(--font-mono);font-size:.75rem;color:white;font-weight:600;transition:width 1s ease}
+  .journey-marker{position:absolute;top:-6px;height:52px;width:2px;background:var(--accent3);z-index:5}
+  .journey-marker::after{content:'▼ MAINTENANT';position:absolute;top:-18px;left:4px;font-family:var(--font-mono);font-size:.55rem;color:var(--accent3);white-space:nowrap}
+  .journey-times{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:.7rem;color:var(--text-dim);margin-top:4px}
+
   /* ── Toggle Dark Mode ─────────────────────── */
   .theme-toggle{
     display:flex;align-items:center;gap:8px;cursor:pointer;
@@ -394,6 +500,69 @@
   </main>
 </div>
 
+<!-- Page Détail Convoi -->
+<div class="detail-overlay" id="detailOverlay">
+  <div class="detail-header">
+    <div class="detail-header-left">
+      <button class="detail-back" onclick="closeDetail()">← RETOUR</button>
+      <div>
+        <div class="detail-train-id" id="detailId">—</div>
+        <div class="detail-subtitle" id="detailSubtitle">—</div>
+      </div>
+    </div>
+    <div id="detailStatusBadge" class="detail-status-badge"></div>
+  </div>
+
+  <div class="detail-body">
+    <!-- Info cards -->
+    <div class="detail-info-grid" id="detailInfoGrid"></div>
+
+    <!-- Train visuel -->
+    <div class="train-visual-section">
+      <div class="train-visual-title">🚂 COMPOSITION DU CONVOI</div>
+      <div class="train-scene">
+        <div class="train-svg-container" id="trainSvgContainer"></div>
+        <div class="train-rails" id="trainRails"></div>
+      </div>
+      <div style="margin-top:12px;font-family:var(--font-mono);font-size:.7rem;color:var(--text-dim);text-align:center" id="wagonLegend"></div>
+    </div>
+
+    <!-- Déchargement -->
+    <div class="unload-section">
+      <div class="unload-title">⚙️ PROGRESSION DU DÉCHARGEMENT</div>
+      <div class="unload-progress-wrap">
+        <div class="unload-labels">
+          <div class="unload-pct" id="unloadPct">0%</div>
+          <div class="unload-tons" id="unloadTons"></div>
+        </div>
+        <div class="unload-bar-track">
+          <div class="unload-bar-fill" id="unloadBar" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="unload-steps" id="unloadSteps"></div>
+      <div class="unload-controls">
+        <div class="unload-input-group">
+          <span>Tonnes déchargées :</span>
+          <input type="number" class="unload-input" id="unloadInput" min="0" placeholder="0">
+          <span id="unloadMax">/ 0t</span>
+        </div>
+        <button class="btn btn-success" onclick="saveUnload()">✓ METTRE À JOUR</button>
+        <button class="btn btn-danger" onclick="resetUnload()">↺ RESET</button>
+      </div>
+    </div>
+
+    <!-- Timeline voyage -->
+    <div class="detail-timeline">
+      <div class="unload-title">📍 PROGRESSION DU VOYAGE</div>
+      <div class="journey-bar" id="journeyBar">
+        <div class="journey-fill" id="journeyFill"></div>
+        <div class="journey-marker" id="journeyMarker"></div>
+      </div>
+      <div class="journey-times" id="journeyTimes"></div>
+    </div>
+  </div>
+</div>
+
 <div class="ticker"><span class="ticker-inner" id="tickerText">Chargement...</span></div>
 <div class="toast" id="toast"></div>
 
@@ -512,7 +681,7 @@ function renderRailTimeline(){
       const dep=new Date(t.depart),arr=new Date(t.arrivee);
       const left=Math.max(0,(dep-dayStart)/span*100);
       const width=Math.max(1,(arr-dep)/span*100);
-      return`<div class="train-block" style="left:${left}%;width:${Math.min(width,100-left)}%;background:${rail.color};opacity:${t.status==='Arrivé'?.4:1};color:#000" title="${t.train_id} | ${t.cargo} ${t.tonnage}t | ${fmtDate(t.depart)} → ${fmtDate(t.arrivee)}">${t.train_id}</div>`;
+      return`<div class="train-block" style="left:${left}%;width:${Math.min(width,100-left)}%;background:${rail.color};opacity:${t.status==='Arrivé'?.4:1};color:#000;cursor:pointer" title="Cliquer pour voir le détail" onclick="openDetail(${t.id})">${t.train_id}</div>`;
     }).join('');
     const nowPct=Math.max(0,Math.min(100,(now-dayStart)/span*100));
     html+=`<div class="rail-track"><div class="rail-name" style="color:${rail.color}"><span class="rail-indicator" style="background:${rail.color}"></span>${rail.name.split('—')[0]}</div><div class="track-bar">${blocks}<div style="position:absolute;left:${nowPct}%;top:0;bottom:0;width:2px;background:rgba(255,255,255,.3);z-index:10"></div></div></div>`;
@@ -707,6 +876,215 @@ function toggleTV(){
     tvBtn.style.borderColor='';
     tvBtn.style.color='';
   }
+}
+
+// ── Détail Convoi ────────────────────────────────────────
+let currentDetailTrain = null;
+// Stockage local des tonnages déchargés
+function getUnloadedKey(id){ return 'railplan-unload-'+id; }
+function getUnloaded(id){ return parseFloat(localStorage.getItem(getUnloadedKey(id))||'0'); }
+function setUnloaded(id,val){ localStorage.setItem(getUnloadedKey(id), val); }
+
+// SVG Locomotive
+function svgLoco(color){
+  return`<svg width="110" height="72" viewBox="0 0 110 72" xmlns="http://www.w3.org/2000/svg">
+    <!-- Corps principal -->
+    <rect x="8" y="18" width="88" height="36" rx="6" fill="${color}"/>
+    <!-- Nez avant arrondi -->
+    <ellipse cx="96" cy="36" rx="10" ry="18" fill="${color}"/>
+    <!-- Cabine -->
+    <rect x="12" y="10" width="30" height="20" rx="3" fill="${color}" opacity=".85"/>
+    <!-- Vitres cabine -->
+    <rect x="15" y="13" width="11" height="10" rx="2" fill="white" opacity=".9"/>
+    <rect x="28" y="13" width="11" height="10" rx="2" fill="white" opacity=".9"/>
+    <!-- Fenêtres latérales -->
+    <rect x="48" y="22" width="14" height="10" rx="2" fill="white" opacity=".7"/>
+    <rect x="66" y="22" width="14" height="10" rx="2" fill="white" opacity=".7"/>
+    <!-- Cheminée -->
+    <rect x="18" y="4" width="8" height="10" rx="2" fill="#444"/>
+    <rect x="16" y="2" width="12" height="5" rx="2" fill="#333"/>
+    <!-- Fumée -->
+    <circle cx="22" cy="0" r="3" fill="#888" opacity=".4"/>
+    <circle cx="26" cy="-3" r="2" fill="#888" opacity=".25"/>
+    <!-- Grille avant -->
+    <rect x="90" y="28" width="14" height="16" rx="3" fill="rgba(0,0,0,.3)"/>
+    <!-- Phare -->
+    <circle cx="100" cy="32" r="3" fill="#ffe066"/>
+    <circle cx="100" cy="42" r="3" fill="#ffe066"/>
+    <!-- Barre de tamponnement -->
+    <rect x="98" y="34" width="8" height="6" rx="1" fill="#555"/>
+    <!-- Châssis bas -->
+    <rect x="6" y="50" width="92" height="6" rx="2" fill="rgba(0,0,0,.25)"/>
+    <!-- Roues -->
+    <circle cx="22" cy="58" r="10" fill="#222"/>
+    <circle cx="22" cy="58" r="6" fill="#444"/>
+    <circle cx="22" cy="58" r="2" fill="#aaa"/>
+    <circle cx="46" cy="58" r="10" fill="#222"/>
+    <circle cx="46" cy="58" r="6" fill="#444"/>
+    <circle cx="46" cy="58" r="2" fill="#aaa"/>
+    <circle cx="70" cy="58" r="10" fill="#222"/>
+    <circle cx="70" cy="58" r="6" fill="#444"/>
+    <circle cx="70" cy="58" r="2" fill="#aaa"/>
+    <circle cx="90" cy="58" r="8" fill="#222"/>
+    <circle cx="90" cy="58" r="5" fill="#444"/>
+    <circle cx="90" cy="58" r="2" fill="#aaa"/>
+    <!-- Bielle -->
+    <line x1="22" y1="58" x2="70" y2="58" stroke="#888" stroke-width="2"/>
+  </svg>`;
+}
+
+// SVG Wagon marchandise
+function svgWagon(color, cargo, loaded, idx){
+  const grainColor = {Orge:'#d4a843',Blé:'#e8c870',Maïs:'#f0b030',Colza:'#8db54a',Tournesol:'#f5c518'}[cargo]||'#aaa';
+  const fillH = loaded ? 22 : 4;
+  return`<svg width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+    <!-- Corps wagon -->
+    <rect x="4" y="20" width="64" height="32" rx="4" fill="${loaded?color:'#888'}" opacity="${loaded?1:.5}"/>
+    <!-- Rebords -->
+    <rect x="2" y="18" width="68" height="6" rx="2" fill="${loaded?color:'#777'}"/>
+    <rect x="4" y="46" width="64" height="5" rx="2" fill="rgba(0,0,0,.2)"/>
+    <!-- Contenu (grain) -->
+    ${loaded?`<rect x="6" y="${48-fillH}" width="60" height="${fillH}" rx="2" fill="${grainColor}" opacity=".85"/>
+    <ellipse cx="36" cy="${48-fillH}" rx="30" ry="4" fill="${grainColor}"/>` : ''}
+    <!-- Numéro wagon -->
+    <text x="36" y="38" text-anchor="middle" font-family="monospace" font-size="9" fill="white" opacity=".7">${String(idx+1).padStart(2,'0')}</text>
+    <!-- Attaches -->
+    <rect x="0" y="38" width="6" height="6" rx="1" fill="#555"/>
+    <rect x="66" y="38" width="6" height="6" rx="1" fill="#555"/>
+    <!-- Châssis -->
+    <rect x="4" y="50" width="64" height="5" rx="2" fill="rgba(0,0,0,.25)"/>
+    <!-- Roues -->
+    <circle cx="16" cy="60" r="9" fill="#222"/>
+    <circle cx="16" cy="60" r="5" fill="#444"/>
+    <circle cx="16" cy="60" r="2" fill="#aaa"/>
+    <circle cx="56" cy="60" r="9" fill="#222"/>
+    <circle cx="56" cy="60" r="5" fill="#444"/>
+    <circle cx="56" cy="60" r="2" fill="#aaa"/>
+    <!-- Axe -->
+    <line x1="16" y1="60" x2="56" y2="60" stroke="#555" stroke-width="1.5"/>
+  </svg>`;
+}
+
+function openDetail(trainId){
+  const t = trainsData.find(x=>x.id===trainId);
+  if(!t) return;
+  currentDetailTrain = t;
+
+  const rail = RAILS[t.rail];
+  const now = new Date();
+  const dep = new Date(t.depart);
+  const arr = new Date(t.arrivee);
+  const prog = getProgress(t);
+  const unloaded = getUnloaded(t.id);
+  const unloadPct = Math.min(100, Math.round(unloaded/t.tonnage*100));
+
+  // Header
+  document.getElementById('detailId').textContent = t.train_id;
+  document.getElementById('detailSubtitle').textContent = rail.name+' — '+t.client;
+
+  const statusColors = {'En route':'rgba(0,153,204,.2)','Planifié':'rgba(212,168,67,.2)','Arrivé':'rgba(106,138,154,.2)','Alerte':'rgba(224,90,30,.2)'};
+  const statusText = {'En route':'#0099cc','Planifié':'#d4a843','Arrivé':'#6a8a9a','Alerte':'#e05a1e'};
+  const badge = document.getElementById('detailStatusBadge');
+  badge.textContent = t.status.toUpperCase();
+  badge.style.cssText = `background:${statusColors[t.status]||'rgba(255,255,255,.1)'};color:${statusText[t.status]||'white'};border:1px solid ${statusText[t.status]||'white'}`;
+
+  // Info cards
+  const duration = Math.round((arr-dep)/60000);
+  const h = Math.floor(duration/60), m = duration%60;
+  document.getElementById('detailInfoGrid').innerHTML = `
+    <div class="detail-info-card">
+      <div class="detail-info-label">🌾 Marchandise</div>
+      <div class="detail-info-value">${t.cargo}</div>
+      <div class="detail-info-sub">Type de céréale</div>
+    </div>
+    <div class="detail-info-card">
+      <div class="detail-info-label">⚖️ Tonnage total</div>
+      <div class="detail-info-value" style="color:var(--accent2)">${t.tonnage.toLocaleString()} t</div>
+      <div class="detail-info-sub">${Math.round(t.tonnage/wagonsCount(t.tonnage))} t / wagon</div>
+    </div>
+    <div class="detail-info-card">
+      <div class="detail-info-label">👤 Client</div>
+      <div class="detail-info-value">${t.client}</div>
+      <div class="detail-info-sub">Destinataire</div>
+    </div>
+    <div class="detail-info-card">
+      <div class="detail-info-label">⏱️ Durée trajet</div>
+      <div class="detail-info-value">${h}h${String(m).padStart(2,'0')}</div>
+      <div class="detail-info-sub">Progression : ${prog}%</div>
+    </div>`;
+
+  // Train SVG
+  const nbWagons = wagonsCount(t.tonnage);
+  const wagonsDone = Math.round(unloadPct/100*nbWagons);
+  let svgHtml = `<div class="wagon-loco">${svgLoco(rail.color)}</div>`;
+  for(let i=0;i<nbWagons;i++){
+    const loaded = i >= wagonsDone;
+    svgHtml += `<div class="wagon-car ${loaded?'':'unloaded'}">${svgWagon(rail.color, t.cargo, loaded, i)}</div>`;
+  }
+  document.getElementById('trainSvgContainer').innerHTML = svgHtml;
+  document.getElementById('trainRails').style.width = (110 + nbWagons*75 + 32)+'px';
+  document.getElementById('wagonLegend').textContent =
+    `🚂 1 locomotive  +  ${nbWagons} wagons  ·  Charge : ${t.tonnage.toLocaleString()} t  ·  ${wagonsDone} wagon(s) déchargé(s)`;
+
+  // Déchargement
+  document.getElementById('unloadPct').textContent = unloadPct+'%';
+  document.getElementById('unloadTons').innerHTML = `<b>${unloaded.toLocaleString()}</b> t déchargées<br><span style="color:var(--text-dim)">${(t.tonnage-unloaded).toLocaleString()} t restantes</span>`;
+  document.getElementById('unloadInput').value = unloaded;
+  document.getElementById('unloadInput').max = t.tonnage;
+  document.getElementById('unloadMax').textContent = '/ '+t.tonnage.toLocaleString()+'t';
+  setTimeout(()=>{ document.getElementById('unloadBar').style.width = unloadPct+'%'; }, 100);
+
+  const steps = [
+    {icon:'🚂', label:'Arrivée en gare', done: prog>=100||t.status==='Arrivé'},
+    {icon:'🔌', label:'Connexion quai', done: unloadPct>0},
+    {icon:'⚙️', label:'Déchargement', done: unloadPct>=50, active: unloadPct>0&&unloadPct<100},
+    {icon:'✅', label:'Terminé', done: unloadPct>=100},
+  ];
+  document.getElementById('unloadSteps').innerHTML = steps.map(s=>`
+    <div class="unload-step ${s.done?'done':''} ${s.active?'active':''}">
+      <div class="unload-step-icon">${s.icon}</div>
+      <div class="unload-step-label">${s.label}</div>
+    </div>`).join('');
+
+  // Timeline voyage
+  const journeyPct = Math.min(100, prog);
+  const nowPct = Math.max(0, Math.min(100, (now-dep)/(arr-dep)*100));
+  document.getElementById('journeyFill').style.cssText = `width:${journeyPct}%;background:linear-gradient(90deg,${rail.color},${rail.color}aa)`;
+  document.getElementById('journeyFill').textContent = journeyPct > 10 ? journeyPct+'% parcouru' : '';
+  document.getElementById('journeyMarker').style.left = nowPct+'%';
+  document.getElementById('journeyMarker').style.display = (now>=dep&&now<=arr)?'block':'none';
+  document.getElementById('journeyTimes').innerHTML = `
+    <span>🟢 Départ : ${fmtDate(t.depart)}</span>
+    <span>🏁 Arrivée prévue : ${fmtDate(t.arrivee)}</span>`;
+
+  document.getElementById('detailOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function wagonsCount(tonnage){
+  // ~80t par wagon typique céréalier
+  return Math.max(4, Math.min(20, Math.round(tonnage/80)));
+}
+
+function saveUnload(){
+  if(!currentDetailTrain) return;
+  const val = Math.min(currentDetailTrain.tonnage, Math.max(0, parseFloat(document.getElementById('unloadInput').value)||0));
+  setUnloaded(currentDetailTrain.id, val);
+  openDetail(currentDetailTrain.id); // refresh
+  toast('✅ Déchargement mis à jour');
+}
+
+function resetUnload(){
+  if(!currentDetailTrain) return;
+  setUnloaded(currentDetailTrain.id, 0);
+  openDetail(currentDetailTrain.id);
+  toast('↺ Déchargement réinitialisé');
+}
+
+function closeDetail(){
+  document.getElementById('detailOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  currentDetailTrain = null;
 }
 
 // Dark mode
