@@ -552,7 +552,7 @@
           <span id="unloadMax">/ 0t</span>
         </div>
         <button class="btn btn-success" onclick="saveUnload()">✓ METTRE À JOUR</button>
-        <button class="btn" style="border-color:#f0b030;color:#f0b030" id="btnQuaiDetail" onclick="setQuaiFromDetail()">⚓ MISE À QUAI</button>
+        <button class="btn" style="border-color:#f0b030;color:#f0b030" id="btnQuaiDetail" onclick="setQuaiFromDetail()">🛤️ MISE À QUAI</button>
         <button class="btn btn-danger" onclick="resetUnload()">↺ RESET</button>
       </div>
     </div>
@@ -734,7 +734,7 @@ function renderTrains(){
       <td><div class="progress-bar"><div class="progress-fill" style="width:${prog}%;background:${rc}"></div></div><div style="font-family:var(--font-mono);font-size:.65rem;color:var(--text-dim);margin-top:2px">${prog}%</div></td>
       <td onclick="event.stopPropagation()" style="white-space:nowrap;display:flex;gap:4px;align-items:center;padding:8px 12px">
         <button class="btn" style="font-size:.6rem;padding:4px 8px;border-color:var(--accent2);color:var(--accent2)" onclick="openDetail(${t.id})">🔍</button>
-        ${canQuai?`<button class="btn" style="font-size:.6rem;padding:4px 6px;border-color:#f0b030;color:#f0b030" title="Mettre à quai" onclick="setQuai(${t.id})">⚓</button>`:''}
+        ${canQuai?`<button class="btn" style="font-size:.6rem;padding:4px 6px;border-color:#f0b030;color:#f0b030" title="Mettre à quai" onclick="setQuai(${t.id})">🛤️</button>`:''}
         ${isQuai?`<span style="font-family:var(--font-mono);font-size:.6rem;color:#f0b030">À QUAI</span>`:''}
         <button class="btn btn-danger" style="font-size:.6rem;padding:4px 8px" onclick="deleteTrain(${t.id})">✕</button>
       </td>
@@ -772,7 +772,7 @@ function renderAlerts(){
   // Trains mis à quai (en attente de déchargement)
   const quaiAlerts = trainsData.filter(t=>t.status==='Mise à quai').map(t=>{
     const ack=getAck('quai-'+t.id);
-    return{type:'warning',icon:'⚓',trainId:'quai-'+t.id,
+    return{type:'warning',icon:'🛤️',trainId:'quai-'+t.id,
       title:`En attente de déchargement — ${t.train_id}`,
       desc:`${t.cargo} (${t.tonnage}t) | ${t.client} | Mise à quai confirmée`,
       time:'À quai', ack};
@@ -1120,7 +1120,7 @@ function openDetail(trainId){
     {icon:'🚂', label:'Arrivée en gare',
       done: prog>=100||t.status==='Arrivé'||t.status==='Mise à quai',
       active: prog>=90&&prog<100},
-    {icon:'⚓', label:'Mise à quai',
+    {icon:'🛤️', label:'Mise à quai',
       done: isQuaiStatus||unloadPct>0,
       active: t.status==='Mise à quai'&&unloadPct===0},
     {icon:'⚙️', label:'Déchargement',
@@ -1169,7 +1169,7 @@ async function setQuai(trainId){
   if(!confirm(`Confirmer la mise à quai de ${t.train_id} ?\nLe statut passera à "Mise à quai".`)) return;
   await api('/api/trains/'+trainId,{method:'PUT',body:JSON.stringify({status:'Mise à quai', notes: t.notes||'Mis à quai le '+new Date().toLocaleDateString('fr-FR')})});
   await loadTrains();
-  toast('⚓ '+t.train_id+' — Mise à quai confirmée');
+  toast('🛤️ '+t.train_id+' — Mise à quai confirmée');
 }
 
 function resetUnload(){
