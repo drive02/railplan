@@ -534,7 +534,7 @@
 
     <!-- Déchargement -->
     <div class="unload-section">
-      <div class="unload-title">⚙️ PROGRESSION DU DÉCHARGEMENT</div>
+      <div class="unload-title">⚙️ PROGRESSION — MISE À QUAI & DÉCHARGEMENT</div>
       <div class="unload-progress-wrap">
         <div class="unload-labels">
           <div class="unload-pct" id="unloadPct">0%</div>
@@ -720,7 +720,7 @@ function renderTrains(){
   document.getElementById('trainsBody').innerHTML=trainsData.map(t=>{
     const prog=getProgress(t);
     const rc=RAILS[t.rail]?.color||'#888';
-    const canQuai = t.status==='En route'||t.status==='Planifié';
+    const canQuai = t.status==='En route'||t.status==='Planifié'||t.status==='Alerte';
     const isQuai  = t.status==='Mise à quai';
     return`<tr style="cursor:pointer" onclick="openDetail(${t.id})">
       <td><span style="font-family:var(--font-mono);color:${rc}">${t.train_id}</span></td>
@@ -769,6 +769,15 @@ function setAck(id,comment){ localStorage.setItem(getAckKey(id), JSON.stringify(
 function renderAlerts(){
   const now=new Date();
 
+  // Trains mis à quai (en attente de déchargement)
+  const quaiAlerts = trainsData.filter(t=>t.status==='Mise à quai').map(t=>{
+    const ack=getAck('quai-'+t.id);
+    return{type:'warning',icon:'⚓',trainId:'quai-'+t.id,
+      title:`En attente de déchargement — ${t.train_id}`,
+      desc:`${t.cargo} (${t.tonnage}t) | ${t.client} | Mise à quai confirmée`,
+      time:'À quai', ack};
+  });
+
   // Alertes critiques (statut Alerte)
   const criticals = trainsData.filter(t=>t.status==='Alerte').map(t=>{
     const ack = getAck(t.id);
@@ -792,7 +801,7 @@ function renderAlerts(){
   });
 
   const info = [{type:'info',icon:'ℹ️',title:'Système actif',desc:`${trainsData.length} convoi(s) en base — Alertes actives`,time:'Système',ack:null,trainId:null}];
-  const items = [...criticals,...warnings,...info];
+  const items = [...criticals,...quaiAlerts,...warnings,...info];
 
   document.getElementById('alertsList').innerHTML=`<div class="alerts-list">${items.map(a=>`
     <div class="alert-item ${a.type} ${a.ack?'acked':''}">
@@ -1055,7 +1064,9 @@ function openDetail(trainId){
   // Afficher/masquer bouton quai
   setTimeout(()=>{
     const btnQ = document.getElementById('btnQuaiDetail');
-    if(btnQ) btnQ.style.display = (t.status==='Arrivé'||t.status==='Mise à quai') ? 'none' : '';
+    if(btnQ) btnQ.style.display = (t.status==='Arrivé'||t.status==='Mise à quai'||t.status==='En route'&&false) ? 'none' : '';
+    // Libellé dynamique selon contexte
+    if(btnQ && t.status==='Mise à quai') btnQ.style.display='none';
   },50);
 
   // Info cards
@@ -1104,11 +1115,19 @@ function openDetail(trainId){
   document.getElementById('unloadMax').textContent = '/ '+t.tonnage.toLocaleString()+'t';
   setTimeout(()=>{ document.getElementById('unloadBar').style.width = unloadPct+'%'; }, 100);
 
+  const isQuaiStatus = t.status==='Mise à quai'||t.status==='Arrivé';
   const steps = [
-    {icon:'🚂', label:'Arrivée en gare', done: prog>=100||t.status==='Arrivé'},
-    {icon:'🔌', label:'Connexion quai', done: unloadPct>0},
-    {icon:'⚙️', label:'Déchargement', done: unloadPct>=50, active: unloadPct>0&&unloadPct<100},
-    {icon:'✅', label:'Terminé', done: unloadPct>=100},
+    {icon:'🚂', label:'Arrivée en gare',
+      done: prog>=100||t.status==='Arrivé'||t.status==='Mise à quai',
+      active: prog>=90&&prog<100},
+    {icon:'⚓', label:'Mise à quai',
+      done: isQuaiStatus||unloadPct>0,
+      active: t.status==='Mise à quai'&&unloadPct===0},
+    {icon:'⚙️', label:'Déchargement',
+      done: unloadPct>=100,
+      active: unloadPct>0&&unloadPct<100},
+    {icon:'✅', label:'Terminé',
+      done: unloadPct>=100},
   ];
   document.getElementById('unloadSteps').innerHTML = steps.map(s=>`
     <div class="unload-step ${s.done?'done':''} ${s.active?'active':''}">
@@ -1147,10 +1166,10 @@ function saveUnload(){
 async function setQuai(trainId){
   const t = trainsData.find(x=>x.id===trainId);
   if(!t) return;
-  if(!confirm(`Confirmer la mise à quai de ${t.train_id} ?`)) return;
-  await api('/api/trains/'+trainId,{method:'PUT',body:JSON.stringify({status:'Mise à quai'})});
+  if(!confirm(`Confirmer la mise à quai de ${t.train_id} ?\nLe statut passera à "Mise à quai".`)) return;
+  await api('/api/trains/'+trainId,{method:'PUT',body:JSON.stringify({status:'Mise à quai', notes: t.notes||'Mis à quai le '+new Date().toLocaleDateString('fr-FR')})});
   await loadTrains();
-  toast('⚓ '+t.train_id+' mis à quai');
+  toast('⚓ '+t.train_id+' — Mise à quai confirmée');
 }
 
 function resetUnload(){
