@@ -176,6 +176,80 @@
   .ticker{background:linear-gradient(90deg,var(--ocean-deep),var(--ocean-mid));border-top:3px solid var(--wheat);padding:6px 0;overflow:hidden;white-space:nowrap;position:fixed;bottom:0;left:0;right:0;font-family:var(--font-mono);font-size:.72rem;color:rgba(255,255,255,0.9);z-index:50}
   .ticker-inner{display:inline-block;animation:scroll 40s linear infinite}
   @keyframes scroll{from{transform:translateX(100vw)}to{transform:translateX(-100%)}}
+
+  /* ── Toggle Dark Mode ─────────────────────── */
+  .theme-toggle{
+    display:flex;align-items:center;gap:8px;cursor:pointer;
+    background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);
+    border-radius:20px;padding:5px 12px 5px 8px;
+    font-family:var(--font-mono);font-size:.7rem;color:white;
+    transition:all .2s;user-select:none;
+  }
+  .theme-toggle:hover{background:rgba(255,255,255,0.22)}
+  .toggle-track{
+    width:32px;height:18px;background:rgba(255,255,255,0.2);
+    border-radius:9px;position:relative;transition:background .3s;
+    border:1px solid rgba(255,255,255,0.3);flex-shrink:0;
+  }
+  .toggle-thumb{
+    position:absolute;top:2px;left:2px;
+    width:12px;height:12px;border-radius:50%;
+    background:white;transition:transform .3s,background .3s;
+    box-shadow:0 1px 4px rgba(0,0,0,0.3);
+  }
+  body.dark .toggle-track{background:rgba(0,153,204,0.5);border-color:var(--accent2)}
+  body.dark .toggle-thumb{transform:translateX(14px);background:var(--accent2)}
+
+  /* ── Dark Mode Variables ──────────────────── */
+  body.dark{
+    --bg:#0a0e14;
+    --panel:#0f1520;
+    --border:#1a2535;
+    --text:#c8d8e8;
+    --text-dim:#4a6070;
+    --ocean-light:#0d1520;
+    background-image:linear-gradient(180deg,#0d1825 0%,#0a0e14 100%) !important;
+  }
+  body.dark::after{
+    background:
+      radial-gradient(ellipse at 0% 100%, rgba(0,100,160,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 100% 0%, rgba(0,153,204,0.06) 0%, transparent 60%) !important;
+  }
+  body.dark .sidebar{
+    background:linear-gradient(180deg,#0f1520 0%,#0d1218 100%) !important;
+    border-right-color:#1a2535 !important;
+    box-shadow:2px 0 10px rgba(0,0,0,0.3) !important;
+  }
+  body.dark .tabs{background:#0f1520 !important;border-bottom-color:#1a2535 !important;box-shadow:0 2px 8px rgba(0,0,0,0.3) !important;}
+  body.dark .tab{color:#4a6070 !important}
+  body.dark .tab.active{color:#7dd3f0 !important}
+  body.dark .tab-content{background:#0a0e14 !important}
+  body.dark .stat-card{background:#0f1520 !important;border-color:#1a2535 !important;box-shadow:0 2px 12px rgba(0,0,0,0.3) !important}
+  body.dark .stat-value{color:#7dd3f0 !important}
+  body.dark .rail-visual{background:#0f1520 !important;border-color:#1a2535 !important;box-shadow:none !important}
+  body.dark .track-bar{background:#0d1520 !important;border-color:#1a2535 !important}
+  body.dark .trains-table th{background:#0d1520 !important;color:#4a8aaa !important;border-bottom-color:#0077aa !important;opacity:1 !important}
+  body.dark .trains-table td{border-bottom-color:#1a2535 !important;color:#c8d8e8 !important}
+  body.dark .trains-table tr:hover td{background:#0f1a25 !important}
+  body.dark input,body.dark select,body.dark textarea{background:#0d1520 !important;border-color:#1a2535 !important;color:#c8d8e8 !important;box-shadow:none !important}
+  body.dark select option{background:#0f1520 !important;color:#c8d8e8 !important}
+  body.dark .alert-box{background:rgba(0,100,160,.12) !important;border-color:rgba(0,153,204,.2) !important}
+  body.dark .alert-item{background:#0f1520 !important;border-color:#1a2535 !important;box-shadow:none !important}
+  body.dark .modal{background:#0f1520 !important;border-color:#1a2535 !important}
+  body.dark .modal-title{color:#7dd3f0 !important}
+  body.dark .toast{background:#0f1520 !important;border-color:#1a2535 !important;color:#c8d8e8 !important}
+  body.dark .section-title{color:#4a8aaa !important}
+  body.dark label{color:#4a8aaa !important}
+  body.dark .tbar-label{color:#4a6070 !important}
+  body.dark .progress-bar{background:#1a2535 !important}
+  body.dark ::-webkit-scrollbar-track{background:#0d1520 !important}
+  body.dark .table-toolbar span{color:#4a6070 !important}
+  /* Transition douce sur tout */
+  body,body *{transition:background-color .3s,border-color .3s,color .2s,box-shadow .3s}
+  /* Sauf les animations */
+  .ticker-inner,.train-block,.progress-fill,.tbar-fill,.toggle-thumb,.toggle-track{transition:none !important}
+  .toggle-thumb{transition:transform .3s,background .3s !important}
+  .toggle-track{transition:background .3s !important}
 </style>
 </head>
 <body>
@@ -188,6 +262,10 @@
   </div>
   <div class="clock" id="clock">--:--:--</div>
   <div class="header-actions">
+    <div class="theme-toggle" onclick="toggleDark()" id="themeToggle">
+      <div class="toggle-track"><div class="toggle-thumb"></div></div>
+      <span id="themeLabel">NUIT</span>
+    </div>
     <button class="btn btn-csv" onclick="exportCSV()">⬇ EXPORT CSV</button>
     <button class="btn btn-success" onclick="openModal()">+ NOUVEAU CONVOI</button>
     <button class="btn btn-primary" onclick="toggleTV()">📺 MODE TV</button>
@@ -630,6 +708,22 @@ function toggleTV(){
     tvBtn.style.color='';
   }
 }
+
+// Dark mode
+function toggleDark(){
+  const isDark = document.body.classList.toggle('dark');
+  document.getElementById('themeLabel').textContent = isDark ? 'JOUR' : 'NUIT';
+  localStorage.setItem('railplan-theme', isDark ? 'dark' : 'light');
+}
+
+// Restaurer le thème sauvegardé
+(function(){
+  if(localStorage.getItem('railplan-theme') === 'dark'){
+    document.body.classList.add('dark');
+    const lbl = document.getElementById('themeLabel');
+    if(lbl) lbl.textContent = 'JOUR';
+  }
+})();
 
 // Init
 (async function init(){
