@@ -138,6 +138,10 @@
   .status-planifie{background:#d4a843}
   .status-arrive{background:#6a8a9a}
   .status-alerte{background:#e05a1e;animation:pulse 1s infinite;box-shadow:0 0 6px rgba(224,90,30,0.5)}
+  .status-quai{background:#f0b030;box-shadow:0 0 6px rgba(240,176,48,0.6);animation:pulse 1.5s infinite}
+  .alert-item.acked{opacity:.7}
+  .alert-item.acked .alert-icon{filter:grayscale(.5)}
+  .trains-table tr[onclick]{transition:background .15s}
 
   .progress-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;width:80px}
   .progress-fill{height:100%;border-radius:2px}
@@ -439,6 +443,7 @@
           <option value="all">Tous</option>
           <option value="En route">En route</option>
           <option value="Planifié">Planifié</option>
+          <option value="Mise à quai">Mise à quai</option>
           <option value="Arrivé">Arrivé</option>
           <option value="Alerte">Alerte</option>
         </select>
@@ -547,6 +552,7 @@
           <span id="unloadMax">/ 0t</span>
         </div>
         <button class="btn btn-success" onclick="saveUnload()">✓ METTRE À JOUR</button>
+        <button class="btn" style="border-color:#f0b030;color:#f0b030" id="btnQuaiDetail" onclick="setQuaiFromDetail()">⚓ MISE À QUAI</button>
         <button class="btn btn-danger" onclick="resetUnload()">↺ RESET</button>
       </div>
     </div>
@@ -627,7 +633,7 @@ function toast(msg,type='success'){
 function fmtDate(s){if(!s)return'—';const d=new Date(s);return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}
 function getProgress(t){const n=new Date(),dep=new Date(t.depart),arr=new Date(t.arrivee);if(n<dep)return 0;if(n>arr)return 100;return Math.round((n-dep)/(arr-dep)*100)}
 function cargoClass(c){return'badge badge-'+({Orge:'orge',Blé:'ble',Maïs:'mais',Colza:'colza',Tournesol:'tournesol'}[c]||'orge')}
-function statusHTML(s){return`<span class="status-dot status-${({' En route':'en-route',Planifié:'planifie',Arrivé:'arrive',Alerte:'alerte'}[s]||'planifie')}"></span>${s}`}
+function statusHTML(s){return`<span class="status-dot status-${({'En route':'en-route',Planifié:'planifie',Arrivé:'arrive',Alerte:'alerte','Mise à quai':'quai'}[s]||'planifie')}"></span>${s}`}
 function getFilters(){return{rail:document.getElementById('filterRail').value,cargo:document.getElementById('filterCargo').value,status:document.getElementById('filterStatus').value}}
 
 // API
@@ -714,7 +720,9 @@ function renderTrains(){
   document.getElementById('trainsBody').innerHTML=trainsData.map(t=>{
     const prog=getProgress(t);
     const rc=RAILS[t.rail]?.color||'#888';
-    return`<tr>
+    const canQuai = t.status==='En route'||t.status==='Planifié';
+    const isQuai  = t.status==='Mise à quai';
+    return`<tr style="cursor:pointer" onclick="openDetail(${t.id})">
       <td><span style="font-family:var(--font-mono);color:${rc}">${t.train_id}</span></td>
       <td><span class="rail-indicator" style="background:${rc}"></span>${RAILS[t.rail]?.name.split('—')[0]||''}</td>
       <td><span class="${cargoClass(t.cargo)}">${t.cargo}</span></td>
@@ -724,7 +732,12 @@ function renderTrains(){
       <td style="font-family:var(--font-mono);font-size:.78rem">${fmtDate(t.arrivee)}</td>
       <td>${statusHTML(t.status)}</td>
       <td><div class="progress-bar"><div class="progress-fill" style="width:${prog}%;background:${rc}"></div></div><div style="font-family:var(--font-mono);font-size:.65rem;color:var(--text-dim);margin-top:2px">${prog}%</div></td>
-      <td><button class="btn btn-danger" style="font-size:.6rem;padding:4px 8px" onclick="deleteTrain(${t.id})">✕</button></td>
+      <td onclick="event.stopPropagation()" style="white-space:nowrap;display:flex;gap:4px;align-items:center;padding:8px 12px">
+        <button class="btn" style="font-size:.6rem;padding:4px 8px;border-color:var(--accent2);color:var(--accent2)" onclick="openDetail(${t.id})">🔍</button>
+        ${canQuai?`<button class="btn" style="font-size:.6rem;padding:4px 6px;border-color:#f0b030;color:#f0b030" title="Mettre à quai" onclick="setQuai(${t.id})">⚓</button>`:''}
+        ${isQuai?`<span style="font-family:var(--font-mono);font-size:.6rem;color:#f0b030">À QUAI</span>`:''}
+        <button class="btn btn-danger" style="font-size:.6rem;padding:4px 8px" onclick="deleteTrain(${t.id})">✕</button>
+      </td>
     </tr>`;
   }).join('')||'<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text-dim)">Aucun convoi trouvé</td></tr>';
 }
@@ -739,24 +752,76 @@ function renderFullTimeline(){
   trainsData.forEach(t=>{
     const dep=new Date(t.depart),arr=new Date(t.arrivee),rc=RAILS[t.rail]?.color||'#888';
     const left=Math.max(0,(dep-refStart)/span*100),width=Math.max(.5,(arr-dep)/span*100);
-    html+=`<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+    html+=`<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;cursor:pointer" onclick="openDetail(${t.id})" title="Cliquer pour le détail">
       <div style="width:168px;flex-shrink:0;font-size:.78rem"><span style="font-family:var(--font-mono);color:${rc}">${t.train_id}</span><br><span style="color:var(--text-dim);font-size:.7rem">${t.client}</span></div>
-      <div style="flex:1;height:32px;background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:2px;position:relative;overflow:hidden">
+      <div style="flex:1;height:32px;background:var(--border);border:1px solid var(--border);border-radius:4px;position:relative;overflow:hidden;transition:filter .2s" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter=''">
         <div style="position:absolute;left:${left}%;width:${Math.min(width,100-left)}%;top:2px;bottom:2px;background:${rc};border-radius:2px;display:flex;align-items:center;padding:0 6px;font-family:var(--font-mono);font-size:.62rem;color:#000;white-space:nowrap;overflow:hidden">${t.cargo} · ${t.tonnage}t</div>
       </div></div>`;
   });
   document.getElementById('fullTimeline').innerHTML=html||'<p style="color:var(--text-dim)">Aucun convoi</p>';
 }
 
-// Alerts
+// Alerts — avec acquittement
+function getAckKey(id){ return 'railplan-ack-'+id; }
+function getAck(id){ try{return JSON.parse(localStorage.getItem(getAckKey(id)))||null;}catch{return null;} }
+function setAck(id,comment){ localStorage.setItem(getAckKey(id), JSON.stringify({comment, time:new Date().toLocaleString('fr-FR'), by:'Opérateur'})); }
+
 function renderAlerts(){
   const now=new Date();
-  const items=[
-    ...trainsData.filter(t=>t.status==='Alerte').map(t=>({type:'critical',icon:'🚨',title:`Retard signalé — ${t.train_id}`,desc:`${t.cargo} (${t.tonnage}t) | ${t.client} | ${t.notes||'Cause inconnue'}`,time:'Maintenant'})),
-    ...trainsData.filter(t=>{const diff=(new Date(t.arrivee)-now)/60000;return diff>0&&diff<90&&t.status!=='Arrivé'}).map(t=>{const diff=Math.round((new Date(t.arrivee)-now)/60000);return{type:'warning',icon:'⏰',title:`Arrivée imminente — ${t.train_id}`,desc:`${t.cargo} (${t.tonnage}t) pour ${t.client} dans ${diff} min`,time:fmtDate(t.arrivee)}}),
-    {type:'info',icon:'ℹ️',title:'Système actif',desc:`${trainsData.length} convoi(s) en base`,time:'Système'}
-  ];
-  document.getElementById('alertsList').innerHTML=`<div class="alerts-list">${items.map(a=>`<div class="alert-item ${a.type}"><div class="alert-icon">${a.icon}</div><div class="alert-text"><div class="alert-title">${a.title}</div><div class="alert-desc">${a.desc}</div></div><div class="alert-time">${a.time}</div></div>`).join('')}</div>`;
+
+  // Alertes critiques (statut Alerte)
+  const criticals = trainsData.filter(t=>t.status==='Alerte').map(t=>{
+    const ack = getAck(t.id);
+    return {type:'critical', icon:'🚨', trainId:t.id,
+      title:`Retard signalé — ${t.train_id}`,
+      desc:`${t.cargo} (${t.tonnage}t) | ${t.client} | ${t.notes||'Cause inconnue'}`,
+      time:'Maintenant', ack};
+  });
+
+  // Arrivées imminentes
+  const warnings = trainsData.filter(t=>{
+    const diff=(new Date(t.arrivee)-now)/60000;
+    return diff>0&&diff<90&&t.status!=='Arrivé';
+  }).map(t=>{
+    const diff=Math.round((new Date(t.arrivee)-now)/60000);
+    const ack=getAck('warn-'+t.id);
+    return{type:'warning',icon:'⏰',trainId:'warn-'+t.id,
+      title:`Arrivée imminente — ${t.train_id}`,
+      desc:`${t.cargo} (${t.tonnage}t) pour ${t.client} dans ${diff} min`,
+      time:fmtDate(t.arrivee), ack};
+  });
+
+  const info = [{type:'info',icon:'ℹ️',title:'Système actif',desc:`${trainsData.length} convoi(s) en base — Alertes actives`,time:'Système',ack:null,trainId:null}];
+  const items = [...criticals,...warnings,...info];
+
+  document.getElementById('alertsList').innerHTML=`<div class="alerts-list">${items.map(a=>`
+    <div class="alert-item ${a.type} ${a.ack?'acked':''}">
+      <div class="alert-icon">${a.ack?'✅':a.icon}</div>
+      <div class="alert-text">
+        <div class="alert-title" style="${a.ack?'text-decoration:line-through;opacity:.6':''}">
+          ${a.title}
+          ${a.ack?`<span style="font-family:var(--font-mono);font-size:.6rem;background:rgba(0,153,204,.15);color:var(--accent2);padding:2px 6px;border-radius:3px;margin-left:8px">ACK ${a.ack.time}</span>`:''}
+        </div>
+        <div class="alert-desc">${a.desc}</div>
+        ${a.ack?`<div style="font-family:var(--font-mono);font-size:.7rem;color:var(--accent2);margin-top:4px">💬 ${a.ack.comment} — ${a.ack.by}</div>`:''}
+        ${!a.ack&&a.trainId?`
+          <div style="display:flex;gap:8px;margin-top:8px;align-items:center" onclick="event.stopPropagation()">
+            <input type="text" id="ack-input-${a.trainId}" placeholder="Commentaire d'acquittement..." 
+              style="flex:1;font-size:.75rem;padding:5px 8px;border-radius:3px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-family:var(--font-body)"
+              onkeydown="if(event.key==='Enter')ackAlert('${a.trainId}')">
+            <button class="btn" style="font-size:.65rem;padding:5px 10px;border-color:var(--accent2);color:var(--accent2);white-space:nowrap" onclick="ackAlert('${a.trainId}')">✓ ACQUITTER</button>
+          </div>`:''}
+      </div>
+      <div class="alert-time">${a.time}</div>
+    </div>`).join('')}</div>`;
+}
+
+function ackAlert(alertId){
+  const input = document.getElementById('ack-input-'+alertId);
+  const comment = input?.value?.trim()||'Acquitté sans commentaire';
+  setAck(alertId, comment);
+  renderAlerts();
+  toast('✅ Alerte acquittée');
 }
 
 // Ticker
@@ -987,6 +1052,11 @@ function openDetail(trainId){
   const badge = document.getElementById('detailStatusBadge');
   badge.textContent = t.status.toUpperCase();
   badge.style.cssText = `background:${statusColors[t.status]||'rgba(255,255,255,.1)'};color:${statusText[t.status]||'white'};border:1px solid ${statusText[t.status]||'white'}`;
+  // Afficher/masquer bouton quai
+  setTimeout(()=>{
+    const btnQ = document.getElementById('btnQuaiDetail');
+    if(btnQ) btnQ.style.display = (t.status==='Arrivé'||t.status==='Mise à quai') ? 'none' : '';
+  },50);
 
   // Info cards
   const duration = Math.round((arr-dep)/60000);
@@ -1070,8 +1140,17 @@ function saveUnload(){
   if(!currentDetailTrain) return;
   const val = Math.min(currentDetailTrain.tonnage, Math.max(0, parseFloat(document.getElementById('unloadInput').value)||0));
   setUnloaded(currentDetailTrain.id, val);
-  openDetail(currentDetailTrain.id); // refresh
+  openDetail(currentDetailTrain.id);
   toast('✅ Déchargement mis à jour');
+}
+
+async function setQuai(trainId){
+  const t = trainsData.find(x=>x.id===trainId);
+  if(!t) return;
+  if(!confirm(`Confirmer la mise à quai de ${t.train_id} ?`)) return;
+  await api('/api/trains/'+trainId,{method:'PUT',body:JSON.stringify({status:'Mise à quai'})});
+  await loadTrains();
+  toast('⚓ '+t.train_id+' mis à quai');
 }
 
 function resetUnload(){
@@ -1079,6 +1158,14 @@ function resetUnload(){
   setUnloaded(currentDetailTrain.id, 0);
   openDetail(currentDetailTrain.id);
   toast('↺ Déchargement réinitialisé');
+}
+
+async function setQuaiFromDetail(){
+  if(!currentDetailTrain) return;
+  await setQuai(currentDetailTrain.id);
+  // Refresh la page détail
+  const updated = trainsData.find(x=>x.id===currentDetailTrain.id);
+  if(updated) openDetail(currentDetailTrain.id);
 }
 
 function closeDetail(){
