@@ -28,6 +28,11 @@ services:
       # Mode debug (false en production)
       - DEBUG=false
 
+    # Limites mémoire et CPU
+    mem_limit: 256m
+    mem_reservation: 128m
+    cpus: '0.5'
+
 volumes:
   railplan-data:
     driver: local
